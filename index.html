@@ -601,9 +601,8 @@ function buildWhatsAppMessage(){
 
     msg += `*${idx + 1}. ${p.name}*\n`;
     if(p.link) msg += `🔗 ${p.link}\n`;
-    msg += `Precio: ${fmtQ(unitGTQ)} c/u`;
-    if(p.qty > 1) msg += ` x${p.qty}`;
-    msg += `\n`;
+    msg += `Precio: ${fmtQ(unitGTQ)} c/u\n`;
+    msg += `Cantidad: ${p.qty}\n`;
     msg += `Subtotal: *${fmtQ(subtotal)}*\n\n`;
   });
 
