@@ -216,9 +216,10 @@
       </div>
       <p class="hint">
         Tipo de cambio efectivo actual: USD → <b id="effUSD"></b> GTQ &nbsp;|&nbsp; MXN → <b id="effMXN"></b> GTQ.<br>
-        Estos valores son de referencia (Banguat / mercado, julio 2026). Ajustalos cuando cambie el tipo de cambio real.
+        <span id="rateStatus" class="muted">Obteniendo tipo de cambio en vivo...</span>
       </p>
       <div class="footer-actions">
+        <button class="btn-ghost" onclick="fetchLiveRates()">🔄 Actualizar tipo de cambio en vivo</button>
         <button class="btn-secondary" onclick="saveSettings()">Guardar configuración</button>
       </div>
     </div>
@@ -231,7 +232,7 @@
     <label>Pegar mensaje compartido de SHEIN (opcional — extrae el nombre automáticamente)</label>
     <textarea id="pasteBox" placeholder="Pegá aquí el texto completo que comparte SHEIN (nombre del producto + link)..."></textarea>
     <div class="footer-actions" style="margin-top:8px;">
-      <button class="btn-ghost" onclick="parsePaste()">Extraer nombre y link</button>
+      <button class="btn-ghost" onclick="parsePaste()">🔍 Verificar nombre y link</button>
     </div>
     <div class="parse-result" id="parseResult"></div>
 
@@ -343,6 +344,37 @@ function loadSettings(){
   updateEffRates();
 }
 
+async function fetchLiveRates(){
+  const statusEl = document.getElementById('rateStatus');
+  statusEl.style.color = 'var(--muted)';
+  statusEl.textContent = 'Obteniendo tipo de cambio en vivo...';
+  try{
+    const res = await fetch('https://open.er-api.com/v6/latest/USD');
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const usdToGtq = data && data.rates && data.rates.GTQ;
+    const usdToMxn = data && data.rates && data.rates.MXN;
+    if(!usdToGtq || !usdToMxn) throw new Error('Datos incompletos');
+
+    const mxnToGtq = usdToGtq / usdToMxn;
+
+    document.getElementById('rateUSD').value = usdToGtq.toFixed(4);
+    document.getElementById('rateMXN').value = mxnToGtq.toFixed(4);
+    updateEffRates();
+
+    const s = getSettings();
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+    render();
+
+    const now = new Date();
+    statusEl.style.color = 'var(--ok)';
+    statusEl.textContent = '✓ Tipo de cambio en vivo actualizado — ' + now.toLocaleString('es-GT');
+  }catch(e){
+    statusEl.style.color = 'var(--warn)';
+    statusEl.textContent = '⚠ No se pudo obtener el tipo de cambio en vivo (sin conexión o servicio caído). Usando el último valor guardado — podés editarlo manualmente.';
+  }
+}
+
 function saveSettings(){
   const s = getSettings();
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
@@ -435,12 +467,12 @@ function parsePaste(){
   resultBox.style.display = 'block';
   if(name && link){
     resultBox.textContent = nameFromUrl
-      ? '✓ Link abierto en otra pestaña. El nombre es una aproximación sacada de la URL — revisalo y corregilo, y poné el precio/moneda reales que veas en la página.'
-      : '✓ Nombre y link detectados, y el link se abrió en otra pestaña para que confirmes precio y moneda.';
+      ? '✓ Link abierto en otra pestaña para verificar. El nombre es una aproximación sacada de la URL — revisalo y corregilo, y poné el precio/moneda reales que veas en la página.'
+      : '✓ Nombre y link detectados, y el link se abrió en otra pestaña para que verifiques precio y moneda.';
   } else if(name){
     resultBox.textContent = '✓ Nombre detectado. Ingresá el link y el precio manualmente.';
   } else if(link){
-    resultBox.textContent = '✓ Link abierto en otra pestaña. Revisá ahí el nombre, precio y moneda, y completalos manualmente abajo.';
+    resultBox.textContent = '✓ Link abierto en otra pestaña para verificar. Revisá ahí el nombre, precio y moneda, y completalos manualmente abajo.';
   } else {
     resultBox.textContent = 'No se pudo detectar nada, completá los campos manualmente.';
   }
@@ -613,6 +645,7 @@ document.getElementById('pasteBox').addEventListener('input', ()=>{
 // init
 loadSettings();
 render();
+fetchLiveRates();
 </script>
 </body>
 </html>
