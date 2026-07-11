@@ -183,47 +183,7 @@
 <div class="wrap">
 
   <h1>🛒 Cotizador SHEIN <span class="badge">GTQ</span></h1>
-  <p class="sub">Registra productos, convierte a Quetzales y calcula el total con envío incluido.</p>
-
-  <!-- CONFIGURACIÓN -->
-  <div class="card">
-    <div class="settings-toggle" onclick="toggleSettings()">
-      <h2>⚙️ Configuración de tipo de cambio y envío</h2>
-      <span class="chev" id="chev">▾</span>
-    </div>
-    <div class="settings-body" id="settingsBody">
-      <div class="grid">
-        <div>
-          <label>Tipo de cambio USD → GTQ (base)</label>
-          <input type="number" step="0.0001" id="rateUSD" value="7.63">
-        </div>
-        <div>
-          <label>Tipo de cambio MXN → GTQ (base)</label>
-          <input type="number" step="0.0001" id="rateMXN" value="0.435">
-        </div>
-        <div>
-          <label>Margen a sumar al tipo de cambio</label>
-          <input type="number" step="0.01" id="markup" value="0.37">
-        </div>
-        <div>
-          <label>Envío por producto (Q)</label>
-          <input type="number" step="0.01" id="shipping" value="15">
-        </div>
-      </div>
-      <div class="checkbox-row">
-        <input type="checkbox" id="shipPerUnit" checked>
-        <label for="shipPerUnit" style="margin:0;">Cobrar el envío por cada unidad (cantidad), no solo una vez por producto</label>
-      </div>
-      <p class="hint">
-        Tipo de cambio efectivo actual: USD → <b id="effUSD"></b> GTQ &nbsp;|&nbsp; MXN → <b id="effMXN"></b> GTQ.<br>
-        <span id="rateStatus" class="muted">Obteniendo tipo de cambio en vivo...</span>
-      </p>
-      <div class="footer-actions">
-        <button class="btn-ghost" onclick="fetchLiveRates()">🔄 Actualizar tipo de cambio en vivo</button>
-        <button class="btn-secondary" onclick="saveSettings()">Guardar configuración</button>
-      </div>
-    </div>
-  </div>
+  <p class="sub">Registra productos, convierte a Quetzales y calcula el total con tax incluido.</p>
 
   <!-- AGREGAR PRODUCTO -->
   <div class="card">
@@ -280,7 +240,7 @@
             <th class="num">Precio orig.</th>
             <th class="num">Cant.</th>
             <th class="num">C/u en GTQ</th>
-            <th class="num">Envío</th>
+            <th class="num">Tax</th>
             <th class="num">Subtotal</th>
             <th></th>
           </tr>
@@ -297,7 +257,7 @@
         <div class="value" id="totProducts">Q0.00</div>
       </div>
       <div class="item">
-        <div class="label">Envío</div>
+        <div class="label">Tax</div>
         <div class="value" id="totShipping">Q0.00</div>
       </div>
       <div class="item grand">
@@ -323,6 +283,46 @@
     Nota: por restricciones de los navegadores (CORS), esta página no puede leer el nombre/precio directamente
     desde shein.com. El nombre se extrae del texto que compartís desde la app, y el precio se ingresa manualmente.
   </p>
+
+  <!-- CONFIGURACIÓN -->
+  <div class="card">
+    <div class="settings-toggle" onclick="toggleSettings()">
+      <h2>⚙️ Configuración de tipo de cambio y tax</h2>
+      <span class="chev" id="chev">▾</span>
+    </div>
+    <div class="settings-body" id="settingsBody">
+      <div class="grid">
+        <div>
+          <label>Tipo de cambio USD → GTQ (base)</label>
+          <input type="number" step="0.0001" id="rateUSD" value="7.63">
+        </div>
+        <div>
+          <label>Tipo de cambio MXN → GTQ (base)</label>
+          <input type="number" step="0.0001" id="rateMXN" value="0.435">
+        </div>
+        <div>
+          <label>Margen a sumar al tipo de cambio</label>
+          <input type="number" step="0.01" id="markup" value="0.37">
+        </div>
+        <div>
+          <label>Tax por producto (Q)</label>
+          <input type="number" step="0.01" id="shipping" value="15">
+        </div>
+      </div>
+      <div class="checkbox-row">
+        <input type="checkbox" id="shipPerUnit" checked>
+        <label for="shipPerUnit" style="margin:0;">Cobrar el tax por cada unidad (cantidad), no solo una vez por producto</label>
+      </div>
+      <p class="hint">
+        Tipo de cambio efectivo actual: USD → <b id="effUSD"></b> GTQ &nbsp;|&nbsp; MXN → <b id="effMXN"></b> GTQ.<br>
+        <span id="rateStatus" class="muted">Obteniendo tipo de cambio en vivo...</span>
+      </p>
+      <div class="footer-actions">
+        <button class="btn-ghost" onclick="fetchLiveRates()">🔄 Actualizar tipo de cambio en vivo</button>
+        <button class="btn-secondary" onclick="saveSettings()">Guardar configuración</button>
+      </div>
+    </div>
+  </div>
 
 </div>
 
@@ -588,36 +588,27 @@ function escapeHtml(str){
 }
 
 function buildWhatsAppMessage(){
-  const s = getSettings();
   let totalProducts = 0;
-  let totalShipping = 0;
 
   let msg = '🧾 *Cotización de productos*\n\n';
 
   products.forEach((p, idx)=>{
     const rate = effRateFor(p.currency);
     const unitGTQ = p.price * rate;
-    const shipCost = s.shipPerUnit ? s.shipping * p.qty : s.shipping;
-    const subtotal = (unitGTQ * p.qty) + shipCost;
+    const subtotal = unitGTQ * p.qty;
 
-    totalProducts += unitGTQ * p.qty;
-    totalShipping += shipCost;
+    totalProducts += subtotal;
 
     msg += `*${idx + 1}. ${p.name}*\n`;
     if(p.link) msg += `🔗 ${p.link}\n`;
     msg += `Precio: ${fmtQ(unitGTQ)} c/u`;
     if(p.qty > 1) msg += ` x${p.qty}`;
     msg += `\n`;
-    msg += `Envío: ${fmtQ(shipCost)}\n`;
     msg += `Subtotal: *${fmtQ(subtotal)}*\n\n`;
   });
 
-  const grandTotal = totalProducts + totalShipping;
-
   msg += '━━━━━━━━━━━━━━━\n';
-  msg += `Total productos: ${fmtQ(totalProducts)}\n`;
-  msg += `Total envío: ${fmtQ(totalShipping)}\n`;
-  msg += `*TOTAL A PAGAR: ${fmtQ(grandTotal)}*`;
+  msg += `*TOTAL: ${fmtQ(totalProducts)}*`;
 
   return msg;
 }
