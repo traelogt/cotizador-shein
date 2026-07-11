@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cotizador SHEIN → Quetzales</title>
+<style>
+  :root{
+    --bg:#0f1115;
+    --panel:#171a21;
+    --panel2:#1e222b;
+    --border:#2a2f3a;
+    --text:#eef0f4;
+    --muted:#9aa2b1;
+    --accent:#ff5c8a;
+    --accent2:#ffb5c9;
+    --ok:#3ddc97;
+    --warn:#ffc857;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+    background: radial-gradient(1200px 600px at 10% -10%, #241826 0%, var(--bg) 60%);
+    color:var(--text);
+    padding:24px 16px 80px;
+  }
+  .wrap{max-width:920px;margin:0 auto;}
+  h1{
+    font-size:1.6rem;
+    margin:0 0 4px;
+    display:flex; align-items:center; gap:10px;
+  }
+  h1 span.badge{
+    font-size:0.7rem;
+    background:var(--accent);
+    color:#1a0510;
+    padding:3px 8px;
+    border-radius:20px;
+    font-weight:700;
+  }
+  p.sub{color:var(--muted); margin-top:0; margin-bottom:24px; font-size:0.92rem;}
+
+  .card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:18px 20px;
+    margin-bottom:18px;
+  }
+  .card h2{
+    font-size:1rem;
+    margin:0 0 14px;
+    color:var(--accent2);
+    display:flex; align-items:center; gap:8px;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px,1fr));
+    gap:12px;
+  }
+  label{
+    display:block;
+    font-size:0.78rem;
+    color:var(--muted);
+    margin-bottom:5px;
+  }
+  input[type=text], input[type=number], input[type=url], select, textarea{
+    width:100%;
+    background:var(--panel2);
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:9px 10px;
+    border-radius:8px;
+    font-size:0.9rem;
+    outline:none;
+    transition:border-color .15s;
+  }
+  input:focus, select:focus, textarea:focus{border-color:var(--accent);}
+  textarea{resize:vertical; min-height:64px; font-family:inherit;}
+
+  .row{display:flex; gap:12px; flex-wrap:wrap;}
+  .row > div{flex:1; min-width:130px;}
+
+  button{
+    cursor:pointer;
+    border:none;
+    border-radius:8px;
+    font-weight:600;
+    font-size:0.88rem;
+    padding:10px 16px;
+    transition:transform .1s, opacity .15s;
+  }
+  button:active{transform:scale(0.97);}
+  .btn-primary{background:linear-gradient(135deg, var(--accent), #ff8aab); color:#1a0510;}
+  .btn-secondary{background:var(--panel2); color:var(--text); border:1px solid var(--border);}
+  .btn-ghost{background:transparent; color:var(--muted); border:1px solid var(--border); padding:6px 10px; font-size:0.78rem;}
+  .btn-danger{background:transparent; color:#ff6b6b; border:1px solid #4a2a2a; padding:6px 10px; font-size:0.78rem;}
+  .btn-danger:hover{background:#2a1414;}
+  .btn-ghost:hover{background:var(--panel2);}
+
+  .parse-result{
+    margin-top:10px;
+    font-size:0.82rem;
+    color:var(--ok);
+    display:none;
+  }
+
+  table{width:100%; border-collapse:collapse; font-size:0.86rem;}
+  th{
+    text-align:left;
+    color:var(--muted);
+    font-weight:600;
+    font-size:0.75rem;
+    text-transform:uppercase;
+    letter-spacing:.03em;
+    padding:8px 8px;
+    border-bottom:1px solid var(--border);
+  }
+  td{
+    padding:10px 8px;
+    border-bottom:1px solid var(--border);
+    vertical-align:top;
+  }
+  tr:last-child td{border-bottom:none;}
+  .prod-name{font-weight:600; max-width:260px;}
+  .prod-link{display:block; font-size:0.75rem; color:var(--accent2); text-decoration:none; margin-top:3px; word-break:break-all;}
+  .prod-link:hover{text-decoration:underline;}
+  .muted{color:var(--muted); font-size:0.78rem;}
+  .num{text-align:right; white-space:nowrap;}
+  .empty{
+    text-align:center;
+    color:var(--muted);
+    padding:30px 10px;
+    font-size:0.88rem;
+  }
+
+  .totals{
+    display:flex;
+    justify-content:flex-end;
+    gap:28px;
+    margin-top:14px;
+    padding-top:14px;
+    border-top:1px dashed var(--border);
+    flex-wrap:wrap;
+  }
+  .totals .item{text-align:right;}
+  .totals .item .label{font-size:0.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:.03em;}
+  .totals .item .value{font-size:1.15rem; font-weight:700;}
+  .totals .grand .value{color:var(--accent2); font-size:1.5rem;}
+
+  .settings-toggle{
+    display:flex; align-items:center; justify-content:space-between; cursor:pointer;
+  }
+  .settings-body{display:none; margin-top:14px;}
+  .settings-body.open{display:block;}
+  .chev{transition:transform .2s; color:var(--muted);}
+  .chev.open{transform:rotate(180deg);}
+
+  .checkbox-row{display:flex; align-items:center; gap:8px; margin-top:10px; font-size:0.85rem; color:var(--muted);}
+  .checkbox-row input{width:auto;}
+
+  .footer-actions{
+    display:flex; gap:10px; justify-content:flex-end; margin-top:10px; flex-wrap:wrap;
+  }
+
+  .hint{
+    font-size:0.78rem;
+    color:var(--muted);
+    margin-top:6px;
+    line-height:1.4;
+  }
+
+  ::placeholder{color:#5c6273;}
+
+  @media (max-width:520px){
+    .totals{justify-content:space-between; gap:14px;}
+    .prod-name{max-width:140px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>🛒 Cotizador SHEIN <span class="badge">GTQ</span></h1>
+  <p class="sub">Registra productos, convierte a Quetzales y calcula el total con envío incluido.</p>
+
+  <!-- CONFIGURACIÓN -->
+  <div class="card">
+    <div class="settings-toggle" onclick="toggleSettings()">
+      <h2>⚙️ Configuración de tipo de cambio y envío</h2>
+      <span class="chev" id="chev">▾</span>
+    </div>
+    <div class="settings-body" id="settingsBody">
+      <div class="grid">
+        <div>
+          <label>Tipo de cambio USD → GTQ (base)</label>
+          <input type="number" step="0.0001" id="rateUSD" value="7.63">
+        </div>
+        <div>
+          <label>Tipo de cambio MXN → GTQ (base)</label>
+          <input type="number" step="0.0001" id="rateMXN" value="0.435">
+        </div>
+        <div>
+          <label>Margen a sumar al tipo de cambio</label>
+          <input type="number" step="0.01" id="markup" value="0.37">
+        </div>
+        <div>
+          <label>Envío por producto (Q)</label>
+          <input type="number" step="0.01" id="shipping" value="15">
+        </div>
+      </div>
+      <div class="checkbox-row">
+        <input type="checkbox" id="shipPerUnit" checked>
+        <label for="shipPerUnit" style="margin:0;">Cobrar el envío por cada unidad (cantidad), no solo una vez por producto</label>
+      </div>
+      <p class="hint">
+        Tipo de cambio efectivo actual: USD → <b id="effUSD"></b> GTQ &nbsp;|&nbsp; MXN → <b id="effMXN"></b> GTQ.<br>
+        Estos valores son de referencia (Banguat / mercado, julio 2026). Ajustalos cuando cambie el tipo de cambio real.
+      </p>
+      <div class="footer-actions">
+        <button class="btn-secondary" onclick="saveSettings()">Guardar configuración</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AGREGAR PRODUCTO -->
+  <div class="card">
+    <h2>➕ Agregar producto</h2>
+
+    <label>Pegar mensaje compartido de SHEIN (opcional — extrae el nombre automáticamente)</label>
+    <textarea id="pasteBox" placeholder="Pegá aquí el texto completo que comparte SHEIN (nombre del producto + link)..."></textarea>
+    <div class="footer-actions" style="margin-top:8px;">
+      <button class="btn-ghost" onclick="parsePaste()">Extraer nombre y link</button>
+    </div>
+    <div class="parse-result" id="parseResult"></div>
+
+    <div style="height:14px;"></div>
+
+    <div class="grid">
+      <div style="grid-column: 1 / -1;">
+        <label>Nombre del producto</label>
+        <input type="text" id="pName" placeholder="Ej. Sellador de bolsas portátil USB">
+      </div>
+      <div style="grid-column: 1 / -1;">
+        <label>Link del producto (opcional)</label>
+        <input type="url" id="pLink" placeholder="https://...">
+      </div>
+      <div>
+        <label>Precio</label>
+        <input type="number" step="0.01" id="pPrice" placeholder="0.00">
+      </div>
+      <div>
+        <label>Moneda</label>
+        <select id="pCurrency">
+          <option value="USD">USD</option>
+          <option value="MXN">MXN</option>
+        </select>
+      </div>
+      <div>
+        <label>Cantidad</label>
+        <input type="number" step="1" min="1" id="pQty" value="1">
+      </div>
+    </div>
+
+    <div class="footer-actions">
+      <button class="btn-primary" onclick="addProduct()">Agregar a la cotización</button>
+    </div>
+  </div>
+
+  <!-- LISTA -->
+  <div class="card">
+    <h2>📋 Productos cotizados</h2>
+    <div style="overflow-x:auto;">
+      <table id="productTable">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th class="num">Precio orig.</th>
+            <th class="num">Cant.</th>
+            <th class="num">C/u en GTQ</th>
+            <th class="num">Envío</th>
+            <th class="num">Subtotal</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="productBody">
+        </tbody>
+      </table>
+      <div class="empty" id="emptyMsg">Todavía no has agregado productos.</div>
+    </div>
+
+    <div class="totals" id="totalsBlock" style="display:none;">
+      <div class="item">
+        <div class="label">Productos</div>
+        <div class="value" id="totProducts">Q0.00</div>
+      </div>
+      <div class="item">
+        <div class="label">Envío</div>
+        <div class="value" id="totShipping">Q0.00</div>
+      </div>
+      <div class="item grand">
+        <div class="label">Total</div>
+        <div class="value" id="totGrand">Q0.00</div>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:14px; align-items:flex-end;">
+      <div style="max-width:220px;">
+        <label>Número de WhatsApp (opcional)</label>
+        <input type="text" id="waPhone" placeholder="Ej. 50212345678">
+      </div>
+      <div class="footer-actions" style="flex:1; margin-top:0;">
+        <button class="btn-ghost" onclick="clearAll()">🗑 Borrar todo</button>
+        <button class="btn-primary" onclick="sendWhatsApp()">📤 Enviar cotización por WhatsApp</button>
+      </div>
+    </div>
+    <p class="hint">Si dejás el número vacío, WhatsApp te va a pedir que elijás el contacto o grupo al que enviarlo.</p>
+  </div>
+
+  <p class="hint" style="text-align:center;">
+    Nota: por restricciones de los navegadores (CORS), esta página no puede leer el nombre/precio directamente
+    desde shein.com. El nombre se extrae del texto que compartís desde la app, y el precio se ingresa manualmente.
+  </p>
+
+</div>
+
+<script>
+const STORAGE_KEY = 'cotizador_shein_products_v1';
+const SETTINGS_KEY = 'cotizador_shein_settings_v1';
+
+let products = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+
+function loadSettings(){
+  const s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null');
+  if(s){
+    document.getElementById('rateUSD').value = s.rateUSD;
+    document.getElementById('rateMXN').value = s.rateMXN;
+    document.getElementById('markup').value = s.markup;
+    document.getElementById('shipping').value = s.shipping;
+    document.getElementById('shipPerUnit').checked = s.shipPerUnit;
+  }
+  updateEffRates();
+}
+
+function saveSettings(){
+  const s = getSettings();
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+  updateEffRates();
+  render();
+  const btn = event.target;
+  const original = btn.textContent;
+  btn.textContent = '✓ Guardado';
+  setTimeout(()=> btn.textContent = original, 1200);
+}
+
+function getSettings(){
+  return {
+    rateUSD: parseFloat(document.getElementById('rateUSD').value) || 0,
+    rateMXN: parseFloat(document.getElementById('rateMXN').value) || 0,
+    markup: parseFloat(document.getElementById('markup').value) || 0,
+    shipping: parseFloat(document.getElementById('shipping').value) || 0,
+    shipPerUnit: document.getElementById('shipPerUnit').checked
+  };
+}
+
+function updateEffRates(){
+  const s = getSettings();
+  document.getElementById('effUSD').textContent = 'Q' + (s.rateUSD + s.markup).toFixed(4);
+  document.getElementById('effMXN').textContent = 'Q' + (s.rateMXN + s.markup).toFixed(4);
+}
+
+['rateUSD','rateMXN','markup','shipping'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', updateEffRates);
+});
+
+function toggleSettings(){
+  document.getElementById('settingsBody').classList.toggle('open');
+  document.getElementById('chev').classList.toggle('open');
+}
+
+function nameFromUrlSlug(url){
+  try{
+    const u = new URL(url);
+    // Busca un segmento tipo "Refillable-Containers-p-31715267.html"
+    const seg = u.pathname.split('/').filter(Boolean).pop() || '';
+    const noExt = seg.replace(/\.html?$/i, '');
+    // Corta en "-p-<numero>" que es el patrón de SHEIN para el ID de producto
+    const cut = noExt.replace(/-p-\d+.*$/i, '');
+    if(!cut) return '';
+    const words = cut.split('-').filter(Boolean);
+    if(words.length < 2) return ''; // muy corto / probablemente no es un nombre útil
+    return words.join(' ');
+  }catch(e){
+    return '';
+  }
+}
+
+function parsePaste(){
+  const raw = document.getElementById('pasteBox').value.trim();
+  const resultBox = document.getElementById('parseResult');
+  if(!raw){ resultBox.style.display='none'; return; }
+
+  // Extraer link (http/https)
+  const linkMatch = raw.match(/https?:\/\/\S+/);
+  const link = linkMatch ? linkMatch[0] : '';
+
+  // Extraer nombre: primera línea no vacía que no sea el link
+  // y que no sea la frase promocional de SHEIN
+  const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
+  let name = '';
+  for(const line of lines){
+    if(line.startsWith('http')) continue;
+    if(/he descubierto/i.test(line)) continue;
+    name = line;
+    break;
+  }
+
+  // Si no hay texto descriptivo (solo pegaron el link), intentamos
+  // sacar un nombre aproximado del slug de la URL como último recurso
+  let nameFromUrl = false;
+  if(!name && link){
+    const guess = nameFromUrlSlug(link);
+    if(guess){ name = guess; nameFromUrl = true; }
+  }
+
+  if(name) document.getElementById('pName').value = name;
+  if(link) document.getElementById('pLink').value = link;
+
+  // Abrir el link para que el usuario verifique nombre, precio y moneda reales
+  if(link){
+    window.open(link, '_blank', 'noopener');
+  }
+
+  resultBox.style.display = 'block';
+  if(name && link){
+    resultBox.textContent = nameFromUrl
+      ? '✓ Link abierto en otra pestaña. El nombre es una aproximación sacada de la URL — revisalo y corregilo, y poné el precio/moneda reales que veas en la página.'
+      : '✓ Nombre y link detectados, y el link se abrió en otra pestaña para que confirmes precio y moneda.';
+  } else if(name){
+    resultBox.textContent = '✓ Nombre detectado. Ingresá el link y el precio manualmente.';
+  } else if(link){
+    resultBox.textContent = '✓ Link abierto en otra pestaña. Revisá ahí el nombre, precio y moneda, y completalos manualmente abajo.';
+  } else {
+    resultBox.textContent = 'No se pudo detectar nada, completá los campos manualmente.';
+  }
+}
+
+function effRateFor(currency){
+  const s = getSettings();
+  return currency === 'USD' ? (s.rateUSD + s.markup) : (s.rateMXN + s.markup);
+}
+
+function addProduct(){
+  const name = document.getElementById('pName').value.trim();
+  const link = document.getElementById('pLink').value.trim();
+  const price = parseFloat(document.getElementById('pPrice').value);
+  const currency = document.getElementById('pCurrency').value;
+  const qty = parseInt(document.getElementById('pQty').value) || 1;
+
+  if(!name){ alert('Poné el nombre del producto.'); return; }
+  if(!price || price <= 0){ alert('Poné un precio válido.'); return; }
+
+  products.push({
+    id: Date.now(),
+    name, link, price, currency, qty
+  });
+  persist();
+  render();
+
+  // limpiar formulario
+  document.getElementById('pName').value = '';
+  document.getElementById('pLink').value = '';
+  document.getElementById('pPrice').value = '';
+  document.getElementById('pQty').value = 1;
+  document.getElementById('pasteBox').value = '';
+  document.getElementById('parseResult').style.display = 'none';
+}
+
+function removeProduct(id){
+  products = products.filter(p => p.id !== id);
+  persist();
+  render();
+}
+
+function persist(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+}
+
+function clearAll(){
+  if(products.length === 0) return;
+  if(confirm('¿Borrar todos los productos de la cotización?')){
+    products = [];
+    persist();
+    render();
+  }
+}
+
+function fmtQ(n){
+  return 'Q' + n.toLocaleString('es-GT', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function render(){
+  const tbody = document.getElementById('productBody');
+  const emptyMsg = document.getElementById('emptyMsg');
+  const totalsBlock = document.getElementById('totalsBlock');
+  const s = getSettings();
+
+  tbody.innerHTML = '';
+
+  if(products.length === 0){
+    emptyMsg.style.display = 'block';
+    totalsBlock.style.display = 'none';
+    return;
+  }
+  emptyMsg.style.display = 'none';
+  totalsBlock.style.display = 'flex';
+
+  let totalProducts = 0;
+  let totalShipping = 0;
+
+  products.forEach(p=>{
+    const rate = effRateFor(p.currency);
+    const unitGTQ = p.price * rate;
+    const shipCost = s.shipPerUnit ? s.shipping * p.qty : s.shipping;
+    const subtotal = (unitGTQ * p.qty) + shipCost;
+
+    totalProducts += unitGTQ * p.qty;
+    totalShipping += shipCost;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="prod-name">
+        ${escapeHtml(p.name)}
+        ${p.link ? `<a class="prod-link" href="${escapeHtml(p.link)}" target="_blank" rel="noopener">🔗 Ver producto</a>` : ''}
+      </td>
+      <td class="num">${p.price.toFixed(2)} ${p.currency}<br><span class="muted">×${fmtQ(rate)}</span></td>
+      <td class="num">${p.qty}</td>
+      <td class="num">${fmtQ(unitGTQ)}</td>
+      <td class="num">${fmtQ(shipCost)}</td>
+      <td class="num"><b>${fmtQ(subtotal)}</b></td>
+      <td><button class="btn-danger" onclick="removeProduct(${p.id})">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('totProducts').textContent = fmtQ(totalProducts);
+  document.getElementById('totShipping').textContent = fmtQ(totalShipping);
+  document.getElementById('totGrand').textContent = fmtQ(totalProducts + totalShipping);
+}
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function buildWhatsAppMessage(){
+  const s = getSettings();
+  let totalProducts = 0;
+  let totalShipping = 0;
+
+  let msg = '🧾 *Cotización de productos*\n\n';
+
+  products.forEach((p, idx)=>{
+    const rate = effRateFor(p.currency);
+    const unitGTQ = p.price * rate;
+    const shipCost = s.shipPerUnit ? s.shipping * p.qty : s.shipping;
+    const subtotal = (unitGTQ * p.qty) + shipCost;
+
+    totalProducts += unitGTQ * p.qty;
+    totalShipping += shipCost;
+
+    msg += `*${idx + 1}. ${p.name}*\n`;
+    if(p.link) msg += `🔗 ${p.link}\n`;
+    msg += `Precio: ${fmtQ(unitGTQ)} c/u`;
+    if(p.qty > 1) msg += ` x${p.qty}`;
+    msg += `\n`;
+    msg += `Envío: ${fmtQ(shipCost)}\n`;
+    msg += `Subtotal: *${fmtQ(subtotal)}*\n\n`;
+  });
+
+  const grandTotal = totalProducts + totalShipping;
+
+  msg += '━━━━━━━━━━━━━━━\n';
+  msg += `Total productos: ${fmtQ(totalProducts)}\n`;
+  msg += `Total envío: ${fmtQ(totalShipping)}\n`;
+  msg += `*TOTAL A PAGAR: ${fmtQ(grandTotal)}*`;
+
+  return msg;
+}
+
+function sendWhatsApp(){
+  if(products.length === 0){
+    alert('Todavía no hay productos en la cotización.');
+    return;
+  }
+  const msg = buildWhatsAppMessage();
+  const phoneRaw = document.getElementById('waPhone').value.trim();
+  const phone = phoneRaw.replace(/\D/g, '');
+  const url = phone
+    ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
+    : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank', 'noopener');
+}
+
+document.getElementById('pasteBox').addEventListener('input', ()=>{
+  document.getElementById('pName').value = '';
+  document.getElementById('pLink').value = '';
+  document.getElementById('parseResult').style.display = 'none';
+});
+
+// init
+loadSettings();
+render();
+</script>
+</body>
+</html>
